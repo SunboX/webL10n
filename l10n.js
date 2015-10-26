@@ -894,17 +894,27 @@ document.webL10n = (function(window, document, undefined) {
   function substArguments(str, args, key) {
     var reArgs = /\{\{\s*(.+?)\s*\}\}/g;
     return str.replace(reArgs, function(matched_text, arg) {
-      if (args && arg in args) {
-        return args[arg];
+      var value = args;
+      arg = arg.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+      arg = arg.replace(/^\./, '');  // strip a leading dot
+      var argArr = arg.split('.');
+      for (var i = 0, n = argArr.length; i < n; ++i) {
+          var key = argArr[i];
+          if (value && key in value) {
+              value = value[key];
+          }
+          else if (key in gL10nData) {
+              value = gL10nData[key];
+          }
       }
-      if (arg in gL10nData) {
-        return gL10nData[arg];
+      if (value) {
+          return value;
       }
       consoleLog('argument {{' + arg + '}} for #' + key + ' is undefined.');
       return matched_text;
     });
   }
-
+  
   // translate an HTML element
   function translateElement(element) {
     var l10n = getL10nAttributes(element);
